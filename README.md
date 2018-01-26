@@ -1,6 +1,6 @@
 # README #
 
-A library that parses multiple images concurrently from Flickr.com and extracts file names and GPS information from images.
+A library that parses multiple images concurrently from Flickr.com and extracts file names and GPS information
 
 ### How to run? ###
 
