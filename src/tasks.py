@@ -38,7 +38,8 @@ def parse_gps(photo_json):
 
     # Create a row to be inserted into db
     row = (photo_json['filename'], longitude, latitude)
-    insert_into_db(row)
+
+    return insert_into_db(row)
 
 
 @app.task
