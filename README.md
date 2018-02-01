@@ -1,6 +1,12 @@
 # README #
 
-A library that parses multiple images concurrently from Flickr.com and extracts file names and GPS information
+A library that parses multiple images concurrently from Flickr.com and extracts file names and GPS information.
+
+### Tools Used ###
+1. Python
+2. Celery
+3. RabbitMQ
+4. unittest
 
 ### How to run? ###
 
