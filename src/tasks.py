@@ -45,6 +45,9 @@ async def parse_gps(photo_json):
 
             return insert_into_db(row)
 
+    logger.debug("Parsing GPS info end for city: {} photo id: {}".format(
+        photo_json['city'], photo_json['id']))
+
 
 async def parse(per_page, page, city):
     '''
@@ -52,12 +55,13 @@ async def parse(per_page, page, city):
     And asychronously parses each of these photos to get GPS information
     '''
 
-    logger.debug("Parsing page {} for city: {}".format(page, city))
+    logger.debug("Page parse start page: {} for city: {}".format(page, city))
 
     page_url = get_url(per_page, page, city)
     async with ClientSession() as session:
         async with session.get(page_url) as response:
             response = await response.text()
+            logger.debug("Page parse response page: {} for city: {}".format(page, city))
             data = json.loads(response)
             photos = data.get('photos').get('photo')
 
@@ -72,6 +76,8 @@ async def parse(per_page, page, city):
                         break
                 await parse_gps(photo_json)
 
+    logger.debug("Page parser end city: {}".format(city))
+
 
 async def parse_city_info(city):
     '''
@@ -79,7 +85,7 @@ async def parse_city_info(city):
     And asynchronously parses each of these pages
     '''
 
-    logger.debug("Getting meta data from city: {}".format(city))
+    logger.debug("Metadata start city: {}".format(city))
 
     per_page = 1
     page = 1
@@ -88,7 +94,10 @@ async def parse_city_info(city):
     async with ClientSession() as session:
         async with session.get(url) as response:
             response = await response.text()
+            logger.debug("Metadata response city: {}".format(city))
             data = json.loads(response)
             pages = data.get('photos').get('pages')
             for i in range(1, int(pages) + 1):
                 await parse(per_page, i, city)
+
+    logger.debug("Metadata end city: {}".format(city))
