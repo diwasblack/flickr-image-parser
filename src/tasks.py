@@ -1,6 +1,7 @@
 import json
 import re
 import logging
+import asyncio
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
@@ -49,34 +50,35 @@ async def parse_gps(photo_json):
         photo_json['city'], photo_json['id']))
 
 
-async def parse(per_page, page, city):
+async def parse(per_page, page, city, semaphore):
     '''
     Gets all photos in a particular page for a given city
     And asychronously parses each of these photos to get GPS information
     '''
 
-    logger.debug("Page parse start page: {} for city: {}".format(page, city))
+    async with semaphore:
+        logger.debug(
+            "Page parse start page: {} for city: {}".format(page, city))
+        page_url = get_url(per_page, page, city)
+        async with ClientSession() as session:
+            async with session.get(page_url) as response:
+                response = await response.text()
+                logger.debug(
+                    "Page parse response page: {} for city: {}".format(page, city))
+                data = json.loads(response)
+                photos = data.get('photos').get('photo')
 
-    page_url = get_url(per_page, page, city)
-    async with ClientSession() as session:
-        async with session.get(page_url) as response:
-            response = await response.text()
-            logger.debug("Page parse response page: {} for city: {}".format(page, city))
-            data = json.loads(response)
-            photos = data.get('photos').get('photo')
-
-            for photo in photos:
-                photo_json = {"city": city, "owner": photo.get(
-                    'owner'), 'id': photo.get('id')}
-                # Get filename/URL
-                for c in ascii_lowercase:
-                    key = 'url_' + c
-                    if key in photo:
-                        photo_json['filename'] = photo.get(key)
-                        break
-                await parse_gps(photo_json)
-
-    logger.debug("Page parser end city: {}".format(city))
+                for photo in photos:
+                    photo_json = {"city": city, "owner": photo.get(
+                        'owner'), 'id': photo.get('id')}
+                    # Get filename/URL
+                    for c in ascii_lowercase:
+                        key = 'url_' + c
+                        if key in photo:
+                            photo_json['filename'] = photo.get(key)
+                            break
+                    await parse_gps(photo_json)
+        logger.debug("Page parser end city: {}".format(city))
 
 
 async def parse_city_info(city):
@@ -87,17 +89,26 @@ async def parse_city_info(city):
 
     logger.debug("Metadata start city: {}".format(city))
 
-    per_page = 1
+    per_page = 50
     page = 1
 
     url = get_url(per_page, page, city)
+
+    # Create a semaphore to limit the number of concurrent tasks
+    semaphore = asyncio.BoundedSemaphore(10)
+
     async with ClientSession() as session:
         async with session.get(url) as response:
             response = await response.text()
             logger.debug("Metadata response city: {}".format(city))
             data = json.loads(response)
             pages = data.get('photos').get('pages')
+            tasks = []
             for i in range(1, int(pages) + 1):
-                await parse(per_page, i, city)
+                tasks.append(asyncio.ensure_future(
+                    parse(per_page, i, city, semaphore)
+                ))
+
+            await asyncio.gather(*tasks)
 
     logger.debug("Metadata end city: {}".format(city))
