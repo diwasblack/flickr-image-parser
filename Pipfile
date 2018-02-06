@@ -1,21 +1,22 @@
 [[source]]
 
-name = "pypi"
-verify_ssl = true
 url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
 
 
 [packages]
 
-requests = "*"
-"beautifulsoup4" = "*"
-celery = "*"
+aiohttp = "==2.3.10"
+async_timeout = "==2.0.0"
+"beautifulsoup4" = "==4.6.0"
+"bs4" = "==0.0.1"
+chardet = "==3.0.4"
+idna = "==2.6"
+idna_ssl = "==1.0.0"
+multidict = "==4.1.0"
+yarl = "==1.1.0"
 
 
 [dev-packages]
 
-
-
-[requires]
-
-python_version = "3.5"
